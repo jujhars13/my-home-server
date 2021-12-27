@@ -32,6 +32,9 @@ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
 # install k3s
 curl -sfL https://get.k3s.io | sh -
 
+# helm
+snap install helm --classic
+
 echo "sort our resolv"
 sudo systemctl disable systemd-resolved
 sudo systemctl stop systemd-resolved
