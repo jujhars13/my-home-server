@@ -27,7 +27,12 @@ helm repo update
 
 # install secret
 kubectl create secret generic pihole-secret \
-    --from-literal='password=$(< /root/secrets/pihole-secret)>' \
+    --from-literal='password=$(< /vagrant/secrets/pihole-secret)>' \
     --namespace pihole
+
+# install chart
+helm install pihole mojo2600/pihole \
+  --namespace pihole \
+  --values pihole-04-chart-values.yml
 
 ```

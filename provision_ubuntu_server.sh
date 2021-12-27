@@ -14,12 +14,12 @@ sudo apt-get update && sudo apt-get install -y \
 	wget jq htop \
 	net-tools powertop \
 	tree shellcheck lastpass-cli bmon \
-	pass socat xstow 
+	pass socat xstow
 
 echo "install docker"
 curl -fsSL https://get.docker.com | sudo sh \
 	&& sudo systemctl enable --now docker \
-	&& sudo usermod -aG docker "jujhar" 
+	&& sudo usermod -aG docker "jujhar"
 
 # letsencrypt
 # acme.sh --issue -d example.com -w /home/wwwroot/example.com
@@ -34,6 +34,10 @@ curl -sfL https://get.k3s.io | sh -
 
 # helm
 snap install helm --classic
+# tell helm hwere to look for k8s creds
+echo "#\!/bin/sh
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+" | tee /etc/profile.d/z99-k3s-helm.sh
 
 echo "sort our resolv"
 sudo systemctl disable systemd-resolved
