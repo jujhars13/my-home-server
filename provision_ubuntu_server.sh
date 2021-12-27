@@ -1,47 +1,70 @@
 #!/bin/bash
 # provision home server
 
-echo "sudoers"
-echo "jujhar ALL=(ALL) NOPASSWD:ALL" | sudo tee -a "/etc/sudoers.d/jujhar"
+echo "install stuff"
+apt-get update && apt-get install -y \
+    curl git vim \
+	tig ncdu zsh nethogs python3-pip tmux \
+	wget jq htop \
+	net-tools powertop \
+	tree shellcheck bmon \
+	pass socat
+
+echo "set me up"
+useradd -m -G adm jujhar
+mkdir /home/jujhar/.ssh
+curl https://github.com/jujhars13.keys > /home/jujhar/.ssh/authorized_keys
+chown -R jujhar.jujhar /home/jujhar/.ssh
+chmod 700 /home/jujhar/.ssh
+chmod 644 /home/jujhar/.ssh/authorized_keys
+echo "jujhar ALL=(ALL) NOPASSWD:ALL" | tee -a "/etc/sudoers.d/jujhar"
 
 echo "set screen timeout"
 echo -e '\033[9;5]' > /dev/tty1
 
-echo "install stuff"
-sudo apt-get update && sudo apt-get install -y \
-    git vim \
-	tig ncdu zsh nethogs python3-pip tmux curl \
-	wget jq htop \
-	net-tools powertop \
-	tree shellcheck lastpass-cli bmon \
-	pass socat xstow
+echo "#\!/bin/sh
+export EDITOR=/usr/bin/vim
+" | tee /etc/profile.d/z99-custom.sh
 
 echo "install docker"
-curl -fsSL https://get.docker.com | sudo sh \
-	&& sudo systemctl enable --now docker \
-	&& sudo usermod -aG docker "jujhar"
+curl -fsSL https://get.docker.com | sh \
+	&& systemctl enable --now docker \
+	&& usermod -aG docker "jujhar"
+
+echo "docker compose, make sure you have /bin dir symlinked first"
+curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
 
 # letsencrypt
 # acme.sh --issue -d example.com -w /home/wwwroot/example.com
-curl https://get.acme.sh | sudo sh
+# curl https://get.acme.sh | sudo sh
 
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - \
-	&& echo "deb https://apt.kubernetes.io/ kubernetes-$(lsb_release -c -s) main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
-	sudo apt-get update && sudo apt-get install -y kubectl
+# curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - \
+# 	&& echo "deb https://apt.kubernetes.io/ kubernetes-$(lsb_release -c -s) main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list \
+# 	sudo apt-get update && sudo apt-get install -y kubectl
 
 # install k3s
-curl -sfL https://get.k3s.io | sh -
+# curl -sfL https://get.k3s.io | sh -
 
 # helm
-snap install helm --classic
-# tell helm hwere to look for k8s creds
-echo "#\!/bin/sh
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-" | tee /etc/profile.d/z99-k3s-helm.sh
+# snap install helm --classic
+# export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+# # tell helm to look for k8s creds here
+# echo "#\!/bin/sh
+# export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+# " | tee /etc/profile.d/z99-k3s-helm.sh
+
+# # install metallb
+# helm repo add stable https://charts.helm.sh/stable
+# helm repo update
+# helm install metallb stable/metallb --namespace kube-system \
+#   --set configInline.address-pools[0].name=default \
+#   --set configInline.address-pools[0].protocol=layer2 \
+#   --set configInline.address-pools[0].addresses[0]=192.168.178.20-192.168.178.50
 
 echo "sort our resolv"
-sudo systemctl disable systemd-resolved
-sudo systemctl stop systemd-resolved
+systemctl disable systemd-resolved
+systemctl stop systemd-resolved
 # disable systemd sitting on port53
 echo DNSStubListener=no | sudo tee -a /etc/systemd/resolved.conf
 
@@ -74,4 +97,4 @@ grep -q open /proc/acpi/button/lid/*/state
 if [ $? = 0 ]; then
   su -c  \"xset -display :0 dpms force on &> /tmp/screen.lid\" - \$USER
 fi
-" | sudo tee /etc/acpi/lid.sh
+" | tee /etc/acpi/lid.sh

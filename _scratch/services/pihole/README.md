@@ -22,7 +22,7 @@ kubectl apply -f pihole-03-persistent-volume-claim.yml
 kubectl get pvc -n pihole
 
 # install chart
-helm repo add mojo2600 https://mojo2600.github.io/pihole-kubernetes/ 
+helm repo add mojo2600 https://mojo2600.github.io/pihole-kubernetes/
 helm repo update
 
 # install secret
@@ -34,5 +34,17 @@ kubectl create secret generic pihole-secret \
 helm install pihole mojo2600/pihole \
   --namespace pihole \
   --values pihole-04-chart-values.yml
+
+# check install and look for pods and svc
+kubectl get pods -n pihole -o wide
+kubectl get services -n pihole -o wide
+
+# install ingress controller that will wire up to metalLB
+kubectl apply -f pihole-05-ingress.yml
+
+# check install and look for pods and svc and ing
+kubectl get pods -n pihole -o wide
+kubectl get services -n pihole -o wide
+kubectl get ing -n pihole -o wide
 
 ```
